@@ -513,7 +513,43 @@
       }
       return best;
     }
+function resamplePath(points, spacing = 4) {
+  if (points.length < 2) return points.slice();
 
+  const sampled = [points[0]];
+  let previous = points[0];
+  let carried = 0;
+
+  for (let i = 1; i < points.length; i += 1) {
+    const target = points[i];
+    let segmentLength = distance(previous, target);
+
+    while (segmentLength > 0 && carried + segmentLength >= spacing) {
+      const ratio = (spacing - carried) / segmentLength;
+
+      previous = {
+        x: previous.x + (target.x - previous.x) * ratio,
+        y: previous.y + (target.y - previous.y) * ratio,
+        t: previous.t + (target.t - previous.t) * ratio,
+      };
+
+      sampled.push(previous);
+      segmentLength = distance(previous, target);
+      carried = 0;
+    }
+
+    carried += segmentLength;
+    previous = target;
+  }
+
+  const last = points[points.length - 1];
+
+  if (distance(sampled[sampled.length - 1], last) > 0.5) {
+    sampled.push(last);
+  }
+
+  return sampled;
+}
     function coverageScore(points, metrics) {
       const buckets = new Set();
       for (const p of points) {
@@ -656,7 +692,7 @@
 
 function calculateScore(final = false) {
       const metrics = getMetrics();
-      const points = state.points;
+      const points = resamplePath(state.points);
       if (points.length < 5) return 0;
 
       const accuracy = shapeErrorScore(points, metrics);
