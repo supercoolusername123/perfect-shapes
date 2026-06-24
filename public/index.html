@@ -250,11 +250,11 @@
 <body>
   <main>
     <header>
-      <h1>Perfect Shapes</h1>
+      <h1>Nail the Shape</h1>
       <div class="header-actions"><button class="leaderboard-button" id="openLeaderboard">Leaderboard</button><div class="top-score" id="liveScore" aria-live="polite">0%</div></div>
     </header>
 
-    <section class="stage" aria-label="Perfect Shapes drawing game">
+    <section class="stage" aria-label="Nail the Shape drawing game">
       <aside class="panel">
         <div class="shape-buttons" id="shapeButtons">
           <button class="active" data-shape="circle">Circle</button>
@@ -826,7 +826,7 @@ function calculateScore(final = false) {
     window.addEventListener("resize", resizeCanvas);
 
     shareButton.addEventListener("click", async () => {
-      const text = `I scored ${state.liveScore}% on Perfect Shapes!`;
+      const text = `I scored ${state.liveScore}% on Nail the Shape!`;
 
       try {
         await navigator.clipboard.writeText(text);
