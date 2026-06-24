@@ -1,0 +1,889 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Draw circles, squares, triangles, diamonds, and hexagons as perfectly as you can.">
+  <meta name="theme-color" content="#f6f0e6">
+  <meta property="og:title" content="Perfect Shapes">
+  <meta property="og:description" content="How perfectly can you draw five deceptively simple shapes?">
+  <title>Perfect Shapes</title>
+  <style>
+    :root {
+      --ink: #1e1b18;
+      --paper: #f6f0e6;
+      --line: #d8c8b7;
+      --accent: #f45d48;
+      --accent-dark: #c73f2d;
+      --green: #1f9d65;
+      --gold: #d99a1f;
+      --shadow: rgba(35, 24, 16, 0.16);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: ui-rounded, "Avenir Next", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      overflow-x: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    main {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px clamp(16px, 4vw, 48px);
+      border-bottom: 1px solid rgba(30, 27, 24, 0.08);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(24px, 4vw, 42px);
+      letter-spacing: 0;
+    }
+
+    .top-score {
+      min-width: 92px;
+      text-align: right;
+      font-size: clamp(28px, 6vw, 64px);
+      font-weight: 900;
+      line-height: 1;
+      color: var(--accent);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stage {
+      display: grid;
+      grid-template-columns: minmax(180px, 260px) minmax(280px, 1fr) minmax(180px, 260px);
+      gap: clamp(14px, 3vw, 36px);
+      align-items: center;
+      padding: clamp(14px, 3vw, 36px);
+    }
+
+    .panel {
+      align-self: stretch;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 14px;
+    }
+
+    .shape-buttons {
+      display: grid;
+      gap: 10px;
+    }
+
+    button {
+      appearance: none;
+      border: 2px solid var(--ink);
+      background: #fffaf1;
+      color: var(--ink);
+      min-height: 48px;
+      border-radius: 8px;
+      padding: 12px 14px;
+      font: inherit;
+      font-weight: 850;
+      cursor: pointer;
+      box-shadow: 0 4px 0 var(--ink);
+      transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 5px 0 var(--ink);
+    }
+
+    button:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 var(--ink);
+    }
+
+    button.active {
+      background: var(--accent);
+      color: #fffaf1;
+    }
+
+    button.secondary {
+      background: var(--ink);
+      color: #fffaf1;
+      box-shadow: 0 4px 0 rgba(30, 27, 24, 0.35);
+    }
+
+    .hint {
+      margin: 0;
+      color: rgba(30, 27, 24, 0.72);
+      font-size: 15px;
+      line-height: 1.45;
+    }
+
+    .canvas-wrap {
+      position: relative;
+      width: min(74vh, 100%);
+      max-width: 720px;
+      aspect-ratio: 1;
+      justify-self: center;
+      border: 3px solid var(--ink);
+      border-radius: 12px;
+      background:
+        linear-gradient(rgba(30, 27, 24, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(30, 27, 24, 0.035) 1px, transparent 1px),
+        #fffaf1;
+      background-size: 32px 32px;
+      box-shadow: 0 18px 50px var(--shadow);
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: crosshair;
+      touch-action: none;
+    }
+
+    .status {
+      min-height: 96px;
+      display: grid;
+      gap: 8px;
+      align-content: center;
+    }
+
+    .status strong {
+      display: block;
+      font-size: clamp(22px, 4vw, 36px);
+      line-height: 1;
+    }
+
+    .status span {
+      color: rgba(30, 27, 24, 0.68);
+      line-height: 1.35;
+    }
+
+    .meter {
+      height: 16px;
+      border: 2px solid var(--ink);
+      border-radius: 999px;
+      overflow: hidden;
+      background: #fffaf1;
+    }
+
+    .meter-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--gold), var(--green));
+      transition: width 120ms linear;
+    }
+
+    .result {
+      min-height: 96px;
+      padding-top: 4px;
+      font-size: 16px;
+      line-height: 1.5;
+    }
+
+    footer {
+      display: flex;
+      justify-content: center;
+      padding: 0 20px 22px;
+      color: rgba(30, 27, 24, 0.55);
+      font-size: 14px;
+    }
+
+    @media (max-width: 860px) {
+      main {
+        min-height: 100svh;
+      }
+
+      header {
+        align-items: flex-start;
+      }
+
+      .stage {
+        grid-template-columns: 1fr;
+        align-items: stretch;
+      }
+
+      .panel {
+        align-self: auto;
+      }
+
+      .shape-buttons {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+      }
+
+      .shape-buttons button {
+        min-height: 44px;
+        padding: 8px 5px;
+        font-size: 12px;
+      }
+
+      .canvas-wrap {
+        width: min(92vw, 620px);
+      }
+
+      .status {
+        min-height: 64px;
+      }
+    }
+  </style>
+  <link rel="stylesheet" href="/leaderboard.css">
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Perfect Shapes</h1>
+      <div class="header-actions"><button class="leaderboard-button" id="openLeaderboard">Leaderboard</button><div class="top-score" id="liveScore" aria-live="polite">0%</div></div>
+    </header>
+
+    <section class="stage" aria-label="Perfect Shapes drawing game">
+      <aside class="panel">
+        <div class="shape-buttons" id="shapeButtons">
+          <button class="active" data-shape="circle">Circle</button>
+          <button data-shape="square">Square</button>
+          <button data-shape="triangle">Triangle</button>
+          <button data-shape="diamond">Diamond</button>
+          <button data-shape="hexagon">Hexagon</button>
+        </div>
+        <p class="hint">Draw in one smooth motion around the center mark. Pause or crawl too long and the round ends.</p>
+      </aside>
+
+      <div class="canvas-wrap">
+        <canvas id="drawCanvas"></canvas>
+      </div>
+
+      <aside class="panel">
+        <div class="status">
+          <strong id="statusTitle">Draw a perfect circle</strong>
+          <span id="statusText">Press and drag to begin.</span>
+        </div>
+        <div class="meter" aria-hidden="true">
+          <div class="meter-fill" id="meterFill"></div>
+        </div>
+        <button class="secondary" id="resetButton">Try Again</button>
+        <button id="shareButton">Share Score</button>
+        <div class="result" id="resultText"></div>
+      </aside>
+    </section>
+
+    <footer>Personal bests save on this device. Global rankings update live.</footer>
+  </main>
+
+  <script>
+    const canvas = document.getElementById("drawCanvas");
+    const ctx = canvas.getContext("2d");
+    const scoreEl = document.getElementById("liveScore");
+    const meterFill = document.getElementById("meterFill");
+    const statusTitle = document.getElementById("statusTitle");
+    const statusText = document.getElementById("statusText");
+    const resultText = document.getElementById("resultText");
+    const resetButton = document.getElementById("resetButton");
+    const shareButton = document.getElementById("shareButton");
+    const buttons = Array.from(document.querySelectorAll("[data-shape]"));
+
+    const state = {
+      shape: "circle",
+      drawing: false,
+      done: false,
+      points: [],
+      lastPoint: null,
+      lastMoveAt: 0,
+      liveScore: 0,
+      slowFrames: 0,
+      animation: null,
+      analytics: {
+        roundsPlayed: 0,
+        shares: 0,
+        centerViolations: 0,
+      },
+    };
+
+    const shapeNames = {
+      circle: "circle",
+      square: "square",
+      triangle: "triangle",
+      diamond: "diamond",
+      hexagon: "hexagon",
+    };
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      drawScene();
+    }
+
+    function getMetrics() {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        w: rect.width,
+        h: rect.height,
+        cx: rect.width / 2,
+        cy: rect.height / 2,
+        target: rect.width * 0.34,
+      };
+    }
+
+    function pointerPoint(event) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+        t: performance.now(),
+      };
+    }
+
+    function distance(a, b) {
+      return Math.hypot(a.x - b.x, a.y - b.y);
+    }
+
+    function reset() {
+      state.drawing = false;
+      state.done = false;
+      state.points = [];
+      state.lastPoint = null;
+      state.lastMoveAt = 0;
+      state.liveScore = 0;
+      state.slowFrames = 0;
+      scoreEl.textContent = "0%";
+      meterFill.style.width = "0%";
+      statusTitle.textContent = `Draw a perfect ${shapeNames[state.shape]}`;
+      statusText.textContent = "Press and drag to begin.";
+      resultText.textContent = "";
+      drawScene();
+    }
+
+    function drawGuide(metrics) {
+      ctx.save();
+      ctx.lineWidth = 3;
+      ctx.setLineDash([7, 12]);
+      ctx.strokeStyle = "rgba(30, 27, 24, 0.2)";
+      ctx.beginPath();
+
+      if (state.shape === "circle") {
+        ctx.arc(metrics.cx, metrics.cy, metrics.target, 0, Math.PI * 2);
+      } else {
+        const vertices = targetVertices(metrics, state.shape);
+        ctx.moveTo(vertices[0].x, vertices[0].y);
+        for (let i = 1; i < vertices.length; i += 1) ctx.lineTo(vertices[i].x, vertices[i].y);
+        ctx.closePath();
+      }
+
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawScene() {
+      const metrics = getMetrics();
+      ctx.clearRect(0, 0, metrics.w, metrics.h);
+      drawMiniShape(metrics);
+      if (state.points.length < 2) return;
+
+      ctx.save();
+      ctx.lineWidth = 8;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.strokeStyle = state.done && state.liveScore >= 85 ? "#1f9d65" : "#1e1b18";
+      ctx.beginPath();
+      ctx.moveTo(state.points[0].x, state.points[0].y);
+      for (const point of state.points.slice(1)) ctx.lineTo(point.x, point.y);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawMiniShape(metrics) {
+      const size = Math.max(10, Math.min(16, metrics.w * 0.024));
+      ctx.save();
+      ctx.lineWidth = 3;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.strokeStyle = "rgba(30, 27, 24, 0.7)";
+      ctx.fillStyle = "rgba(244, 93, 72, 0.1)";
+      ctx.beginPath();
+
+      if (state.shape === "circle") {
+        ctx.arc(metrics.cx, metrics.cy, size, 0, Math.PI * 2);
+      } else {
+        const vertices = miniVertices(metrics.cx, metrics.cy, size, state.shape);
+        ctx.moveTo(vertices[0].x, vertices[0].y);
+        for (let i = 1; i < vertices.length; i += 1) ctx.lineTo(vertices[i].x, vertices[i].y);
+        ctx.closePath();
+      }
+
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function miniVertices(cx, cy, size, shape) {
+      if (shape === "square") {
+        return [
+          { x: cx - size, y: cy - size },
+          { x: cx + size, y: cy - size },
+          { x: cx + size, y: cy + size },
+          { x: cx - size, y: cy + size },
+        ];
+      }
+      if (shape === "triangle") {
+        return [270, 30, 150].map((deg) => {
+          const a = deg * Math.PI / 180;
+          return { x: cx + Math.cos(a) * size * 1.25, y: cy + Math.sin(a) * size * 1.25 };
+        });
+      }
+      if (shape === "diamond") {
+        return [
+          { x: cx, y: cy - size * 1.25 },
+          { x: cx + size * 1.25, y: cy },
+          { x: cx, y: cy + size * 1.25 },
+          { x: cx - size * 1.25, y: cy },
+        ];
+      }
+      return [270, 330, 30, 90, 150, 210].map((deg) => {
+        const a = deg * Math.PI / 180;
+        return { x: cx + Math.cos(a) * size * 1.25, y: cy + Math.sin(a) * size * 1.25 };
+      });
+    }
+
+    function targetVertices(metrics, shape) {
+      const { cx, cy, target } = metrics;
+      if (shape === "square") {
+        return [
+          { x: cx - target, y: cy - target },
+          { x: cx + target, y: cy - target },
+          { x: cx + target, y: cy + target },
+          { x: cx - target, y: cy + target },
+        ];
+      }
+      if (shape === "triangle") {
+        const r = target * 1.18;
+        return [270, 30, 150].map((deg) => {
+          const a = deg * Math.PI / 180;
+          return { x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r };
+        });
+      }
+      if (shape === "diamond") {
+        return [
+          { x: cx, y: cy - target * 1.15 },
+          { x: cx + target * 1.15, y: cy },
+          { x: cx, y: cy + target * 1.15 },
+          { x: cx - target * 1.15, y: cy },
+        ];
+      }
+      return [270, 330, 30, 90, 150, 210].map((deg) => {
+        const a = deg * Math.PI / 180;
+        return { x: cx + Math.cos(a) * target * 1.1, y: cy + Math.sin(a) * target * 1.1 };
+      });
+    }
+
+    function pointToSegmentDistance(p, a, b) {
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const len = dx * dx + dy * dy;
+      if (!len) return distance(p, a);
+      const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / len));
+      return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
+    }
+
+    function polyDistance(p, vertices) {
+      let best = Infinity;
+      for (let i = 0; i < vertices.length; i += 1) {
+        const a = vertices[i];
+        const b = vertices[(i + 1) % vertices.length];
+        best = Math.min(best, pointToSegmentDistance(p, a, b));
+      }
+      return best;
+    }
+
+    function coverageScore(points, metrics) {
+      const buckets = new Set();
+      for (const p of points) {
+        const angle = Math.atan2(p.y - metrics.cy, p.x - metrics.cx);
+        const bucket = Math.floor(((angle + Math.PI) / (Math.PI * 2)) * 72);
+        buckets.add(bucket);
+      }
+      return Math.min(1, buckets.size / 68);
+    }
+
+    function closureScore(points, metrics) {
+      if (points.length < 2) return 0;
+      const gap = distance(points[0], points[points.length - 1]);
+      return Math.max(0, 1 - gap / (metrics.target * 0.7));
+    }
+
+    function polygonShape(shape) {
+      if (shape === "square") {
+        return [
+          { x: -1, y: -1 },
+          { x: 1, y: -1 },
+          { x: 1, y: 1 },
+          { x: -1, y: 1 },
+        ];
+      }
+      if (shape === "triangle") {
+        return [270, 30, 150].map((deg) => {
+          const a = deg * Math.PI / 180;
+          return { x: Math.cos(a), y: Math.sin(a) };
+        });
+      }
+      if (shape === "diamond") {
+        return [
+          { x: 0, y: -1 },
+          { x: 1, y: 0 },
+          { x: 0, y: 1 },
+          { x: -1, y: 0 },
+        ];
+      }
+      return [270, 330, 30, 90, 150, 210].map((deg) => {
+        const a = deg * Math.PI / 180;
+        return { x: Math.cos(a), y: Math.sin(a) };
+      });
+    }
+
+    function raySegmentRadius(angle, a, b) {
+      const dx = Math.cos(angle);
+      const dy = Math.sin(angle);
+      const sx = b.x - a.x;
+      const sy = b.y - a.y;
+      const denom = dx * sy - dy * sx;
+      if (Math.abs(denom) < 0.000001) return null;
+      const t = (a.x * sy - a.y * sx) / denom;
+      const u = (a.x * dy - a.y * dx) / denom;
+      if (t > 0 && u >= -0.0001 && u <= 1.0001) return t;
+      return null;
+    }
+
+    function idealRadiusAtAngle(shape, angle) {
+      if (shape === "circle") return 1;
+      const vertices = polygonShape(shape);
+      let best = null;
+      for (let i = 0; i < vertices.length; i += 1) {
+        const hit = raySegmentRadius(angle, vertices[i], vertices[(i + 1) % vertices.length]);
+        if (hit !== null && (best === null || hit < best)) best = hit;
+      }
+      return best || 1;
+    }
+
+    function shapeErrorScore(points, metrics) {
+      if (points.length < 8) return 0;
+      const samples = points
+        .map((p) => {
+          const dx = p.x - metrics.cx;
+          const dy = p.y - metrics.cy;
+          const radius = Math.hypot(dx, dy);
+          if (radius < 8) return null;
+          const ideal = idealRadiusAtAngle(state.shape, Math.atan2(dy, dx));
+          return { radius, ideal };
+        })
+        .filter(Boolean);
+
+      if (samples.length < 8) return 0;
+
+      const scales = samples.map((sample) => sample.radius / sample.ideal).sort((a, b) => a - b);
+      const scale = scales[Math.floor(scales.length / 2)];
+      if (!scale || scale < 12) return 0;
+
+      let errors = samples.map((sample) => Math.abs(sample.radius - sample.ideal * scale));
+      errors.sort((a, b) => a - b);
+      const trimmed = errors.slice(0, Math.max(1, Math.floor(errors.length * 0.9)));
+      const avg = trimmed.reduce((sum, value) => sum + value, 0) / trimmed.length;
+      return Math.max(0, 1 - avg / (scale * 0.18));
+    }
+
+    function smoothnessScore(points, metrics) {
+      if (points.length < 4) return 0.8;
+      let wobble = 0;
+      for (let i = 2; i < points.length; i += 1) {
+        const a1 = Math.atan2(points[i - 1].y - points[i - 2].y, points[i - 1].x - points[i - 2].x);
+        const a2 = Math.atan2(points[i].y - points[i - 1].y, points[i].x - points[i - 1].x);
+        let diff = Math.abs(a2 - a1);
+        diff = Math.min(diff, Math.PI * 2 - diff);
+        wobble += diff;
+      }
+      const normalized = wobble / points.length;
+      return Math.max(0, 1 - normalized / (state.shape === "circle" ? 0.48 : 0.75));
+    }
+
+    
+    function windingScore(points, metrics) {
+      if (points.length < 10) return 1;
+
+      let totalAngle = 0;
+
+      for (let i = 1; i < points.length; i++) {
+        const a1 = Math.atan2(
+          points[i - 1].y - metrics.cy,
+          points[i - 1].x - metrics.cx
+        );
+        const a2 = Math.atan2(
+          points[i].y - metrics.cy,
+          points[i].x - metrics.cx
+        );
+
+        let diff = a2 - a1;
+
+        while (diff > Math.PI) diff -= Math.PI * 2;
+        while (diff < -Math.PI) diff += Math.PI * 2;
+
+        totalAngle += diff;
+      }
+
+      const loops = Math.abs(totalAngle) / (Math.PI * 2);
+
+      if (loops > 1.35) return 0;
+      if (loops > 1.15) return 0.4;
+      return 1;
+    }
+
+function calculateScore(final = false) {
+      const metrics = getMetrics();
+      const points = state.points;
+      if (points.length < 5) return 0;
+
+      const accuracy = shapeErrorScore(points, metrics);
+      const coverage = coverageScore(points, metrics);
+      const closure = closureScore(points, metrics);
+      const smoothness = smoothnessScore(points, metrics);
+      const winding = windingScore(points, metrics);
+
+      if (winding === 0) return 0;
+
+      // Prevent half-circles, lines, and incomplete shapes from scoring well.
+      if (coverage < 0.70) return Math.round(coverage * 20);
+
+      if (closure < 0.35) {
+        return Math.round((coverage * 25) + (closure * 15));
+      }
+
+      const raw =
+        (
+          accuracy * 0.5 +
+          coverage * 0.22 +
+          closure * 0.18 +
+          smoothness * 0.1
+        ) * winding;
+
+      const score = Math.max(0, Math.min(100, Math.round(raw * 100)));
+      return final ? score : Math.min(99, score);
+    }
+
+    function updateLiveScore() {
+      const score = calculateScore(false);
+      state.liveScore = score;
+      scoreEl.textContent = `${score}%`;
+      meterFill.style.width = `${score}%`;
+    }
+
+    function startSlowWatch() {
+      cancelAnimationFrame(state.animation);
+      const tick = () => {
+        if (!state.drawing || state.done) return;
+        const idle = performance.now() - state.lastMoveAt;
+        if (idle > 360) {
+          state.slowFrames += 1;
+        } else {
+          state.slowFrames = Math.max(0, state.slowFrames - 1);
+        }
+        if (state.slowFrames > 10) {
+          finish("too-slow");
+          return;
+        }
+        state.animation = requestAnimationFrame(tick);
+      };
+      state.animation = requestAnimationFrame(tick);
+    }
+
+    function begin(event) {
+      if (state.done) reset();
+      canvas.setPointerCapture(event.pointerId);
+      const point = pointerPoint(event);
+      state.drawing = true;
+      state.points = [point];
+      state.lastPoint = point;
+      state.lastMoveAt = point.t;
+      statusText.textContent = "Keep moving.";
+      resultText.textContent = "";
+      startSlowWatch();
+      drawScene();
+    }
+
+    function move(event) {
+      if (!state.drawing || state.done) return;
+      const point = pointerPoint(event);
+
+      const metrics = getMetrics();
+      const distFromCenter = Math.hypot(
+        point.x - metrics.cx,
+        point.y - metrics.cy
+      );
+
+      if (distFromCenter < 60) {
+        state.analytics.centerViolations += 1;
+        statusTitle.textContent = "Too close";
+        statusText.textContent = "Stay outside the center shape.";
+        finish("too-close");
+        return;
+      }
+
+      const gap = distance(point, state.lastPoint);
+      const dt = Math.max(1, point.t - state.lastPoint.t);
+      const speed = gap / dt;
+
+      if (gap > 1.6) {
+        state.points.push(point);
+        state.lastPoint = point;
+        state.lastMoveAt = point.t;
+        if (speed < 0.045) state.slowFrames += 2;
+        updateLiveScore();
+        drawScene();
+      }
+    }
+
+    function finish(reason) {
+      if (!state.drawing && reason !== "manual") return;
+      state.drawing = false;
+      state.done = true;
+      cancelAnimationFrame(state.animation);
+
+      const score = reason === "too-slow" ? Math.max(0, Math.min(state.liveScore, calculateScore(true) - 16)) : calculateScore(true);
+      state.liveScore = score;
+      scoreEl.textContent = `${score}%`;
+      meterFill.style.width = `${score}%`;
+      drawScene();
+
+      const shape = shapeNames[state.shape];
+      const bestKey = `perfect-shapes-best-${state.shape}`;
+      const best = Math.max(Number(localStorage.getItem(bestKey) || 0), score);
+      localStorage.setItem(bestKey, String(best));
+
+      state.analytics.roundsPlayed += 1;
+
+      if (window.va) {
+        window.va("event", {
+          name: "round_finished",
+          score,
+          shape,
+          reason
+        });
+      }
+
+      if (reason === "too-close") {
+        statusTitle.textContent = "Too close";
+        statusText.textContent = "You touched the center zone.";
+      } else if (reason === "too-slow") {
+        statusTitle.textContent = "Too slow";
+        statusText.textContent = "The shape has to be drawn in one confident motion.";
+      } else if (score >= 95) {
+        statusTitle.textContent = "Nearly perfect";
+        statusText.textContent = `That ${shape} was dangerously clean.`;
+      } else if (score >= 80) {
+        statusTitle.textContent = "Nice draw";
+        statusText.textContent = `That is a respectable ${shape}.`;
+      } else {
+        statusTitle.textContent = "Try again";
+        statusText.textContent = `The ${shape} wants smoother edges.`;
+      }
+
+      resultText.innerHTML = `Final score: <strong>${score}%</strong><br>Best ${shape}: <strong>${best}%</strong>`;
+    }
+
+    function end() {
+      if (state.drawing) finish("complete");
+    }
+
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => {
+        state.shape = button.dataset.shape;
+        buttons.forEach((item) => item.classList.toggle("active", item === button));
+        reset();
+      });
+    });
+
+    resetButton.addEventListener("click", reset);
+    canvas.addEventListener("pointerdown", begin);
+    canvas.addEventListener("pointermove", move);
+    canvas.addEventListener("pointerup", end);
+    canvas.addEventListener("pointercancel", () => finish("too-slow"));
+    window.addEventListener("resize", resizeCanvas);
+
+    shareButton.addEventListener("click", async () => {
+      const text = `I scored ${state.liveScore}% on Perfect Shapes!`;
+
+      try {
+        await navigator.clipboard.writeText(text);
+
+        state.analytics.shares += 1;
+
+        if (window.va) {
+          window.va("event", {
+            name: "score_shared",
+            score: state.liveScore
+          });
+        }
+        statusText.textContent = "Score copied to clipboard!";
+      } catch {
+        statusText.textContent = "Couldn't copy score.";
+      }
+    });
+
+    resizeCanvas();
+  </script>
+<div class="overlay" id="nameOverlay" hidden>
+    <section class="dialog" role="dialog" aria-modal="true" aria-labelledby="nameTitle">
+      <h2 id="nameTitle">You made the top 20!</h2>
+      <p id="nameMessage">Add your name to the global leaderboard.</p>
+      <form id="nameForm">
+        <label>Leaderboard name
+          <input id="playerName" maxlength="18" autocomplete="nickname" placeholder="Your name" required>
+        </label>
+        <p class="form-error" id="nameError" aria-live="polite"></p>
+        <div class="dialog-actions">
+          <button type="button" id="skipName">Not now</button>
+          <button class="secondary" type="submit" id="submitName">Enter leaderboard</button>
+        </div>
+      </form>
+    </section>
+  </div>
+  <div class="overlay" id="leaderboardOverlay" hidden>
+    <section class="leaderboard" role="dialog" aria-modal="true" aria-labelledby="leaderboardTitle">
+      <div class="leaderboard-head">
+        <h2 id="leaderboardTitle">Global Top 20</h2>
+        <button class="icon-button" id="closeLeaderboard" aria-label="Close leaderboard" title="Close">&times;</button>
+      </div>
+      <div class="leaderboard-tabs">
+        <button data-board-shape="circle">Circle</button>
+        <button data-board-shape="square">Square</button>
+        <button data-board-shape="triangle">Triangle</button>
+        <button data-board-shape="diamond">Diamond</button>
+        <button data-board-shape="hexagon">Hexagon</button>
+      </div>
+      <p class="leaderboard-message" id="leaderboardMessage">Loading rankings...</p>
+      <ol class="leaderboard-list" id="leaderboardList"></ol>
+    </section>
+  </div>
+  <script defer src="/_vercel/insights/script.js"></script>
+  <script src="/leaderboard.js"></script>
+</body>
+</html>
+
+
+

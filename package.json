@@ -1,0 +1,14 @@
+{
+  "name": "perfect-shapes-global",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.0.1"
+  },
+  "devDependencies": {
+    "vercel": "^44.2.10"
+  }
+}
