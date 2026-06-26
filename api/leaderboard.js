@@ -30,11 +30,11 @@ async function ensureDatabase(sql) {
       PERFORM pg_advisory_xact_lock(hashtext('perfect-shapes:' || p_shape));
       SELECT COUNT(*) INTO score_count FROM shape_scores WHERE shape = p_shape;
       SELECT score INTO cutoff FROM shape_scores WHERE shape = p_shape
-        ORDER BY score DESC, created_at ASC OFFSET 19 LIMIT 1;
-      IF score_count >= 20 AND p_score < cutoff THEN
+        ORDER BY score DESC, created_at ASC OFFSET 4 LIMIT 1;
+      IF score_count >= 5 AND p_score < cutoff THEN
         RETURN QUERY SELECT FALSE, 'cutoff'::TEXT, NULL::BOOLEAN, NULL::BIGINT; RETURN;
       END IF;
-      IF score_count >= 20 AND p_score = cutoff THEN
+      IF score_count >= 5 AND p_score = cutoff THEN
         tie_result := random() >= 0.5;
         IF NOT tie_result THEN
           RETURN QUERY SELECT FALSE, 'coin-flip'::TEXT, FALSE, NULL::BIGINT; RETURN;
@@ -44,7 +44,7 @@ async function ensureDatabase(sql) {
         VALUES (p_shape, p_name, p_score) RETURNING id INTO new_id;
       DELETE FROM shape_scores WHERE id IN (
         SELECT id FROM shape_scores WHERE shape = p_shape
-        ORDER BY score DESC, created_at ASC OFFSET 20
+        ORDER BY score DESC, created_at ASC OFFSET 5
       );
       RETURN QUERY SELECT TRUE, NULL::TEXT, tie_result, new_id;
     END;
@@ -54,7 +54,7 @@ async function ensureDatabase(sql) {
 async function leaders(sql, shape) {
   const rows = await sql`SELECT id, player_name AS name, score, created_at
     FROM shape_scores WHERE shape = ${shape}
-    ORDER BY score DESC, created_at ASC LIMIT 20`;
+    ORDER BY score DESC, created_at ASC LIMIT 5`;
   return rows.map((row, index) => ({
     id: String(row.id), rank: index + 1, name: row.name,
     score: Number(row.score), createdAt: row.created_at
@@ -84,8 +84,8 @@ export default async function handler(req, res) {
       return send(res, 400, { error: "Invalid score." });
     }
     const current = await leaders(sql, shape);
-    const cutoff = current.length < 20 ? null : current[19].score;
-    const qualifies = current.length < 20 || score >= cutoff;
+    const cutoff = current.length < 5 ? null : current[4].score;
+    const qualifies = current.length < 5 || score >= cutoff;
     if (action === "qualify") {
       return send(res, 200, { qualifies, tie: qualifies && cutoff !== null && score === cutoff, cutoff });
     }
