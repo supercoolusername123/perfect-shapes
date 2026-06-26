@@ -25,27 +25,50 @@ async function ensureDatabase(sql) {
   await sql`CREATE OR REPLACE FUNCTION submit_shape_score(p_shape TEXT, p_name TEXT, p_score SMALLINT)
     RETURNS TABLE(entered BOOLEAN, reason TEXT, won_tie BOOLEAN, score_id BIGINT)
     LANGUAGE plpgsql AS $$
-    DECLARE score_count INTEGER; cutoff SMALLINT; new_id BIGINT; tie_result BOOLEAN := NULL;
+    DECLARE
+      score_count INTEGER;
+      cutoff SMALLINT;
+      cutoff_id BIGINT;
+      new_id BIGINT;
+      tie_result BOOLEAN := NULL;
     BEGIN
       PERFORM pg_advisory_xact_lock(hashtext('perfect-shapes:' || p_shape));
+
       SELECT COUNT(*) INTO score_count FROM shape_scores WHERE shape = p_shape;
-      SELECT score INTO cutoff FROM shape_scores WHERE shape = p_shape
-        ORDER BY score DESC, created_at ASC OFFSET 4 LIMIT 1;
+
+      SELECT id, score INTO cutoff_id, cutoff
+      FROM shape_scores
+      WHERE shape = p_shape
+      ORDER BY score DESC, created_at ASC
+      OFFSET 4 LIMIT 1;
+
       IF score_count >= 5 AND p_score < cutoff THEN
-        RETURN QUERY SELECT FALSE, 'cutoff'::TEXT, NULL::BOOLEAN, NULL::BIGINT; RETURN;
+        RETURN QUERY SELECT FALSE, 'cutoff'::TEXT, NULL::BOOLEAN, NULL::BIGINT;
+        RETURN;
       END IF;
+
       IF score_count >= 5 AND p_score = cutoff THEN
         tie_result := random() >= 0.5;
+
         IF NOT tie_result THEN
-          RETURN QUERY SELECT FALSE, 'coin-flip'::TEXT, FALSE, NULL::BIGINT; RETURN;
+          RETURN QUERY SELECT FALSE, 'coin-flip'::TEXT, FALSE, NULL::BIGINT;
+          RETURN;
         END IF;
+
+        DELETE FROM shape_scores WHERE id = cutoff_id;
       END IF;
+
       INSERT INTO shape_scores (shape, player_name, score)
-        VALUES (p_shape, p_name, p_score) RETURNING id INTO new_id;
+        VALUES (p_shape, p_name, p_score)
+        RETURNING id INTO new_id;
+
       DELETE FROM shape_scores WHERE id IN (
-        SELECT id FROM shape_scores WHERE shape = p_shape
-        ORDER BY score DESC, created_at ASC OFFSET 5
+        SELECT id FROM shape_scores
+        WHERE shape = p_shape
+        ORDER BY score DESC, created_at ASC
+        OFFSET 5
       );
+
       RETURN QUERY SELECT TRUE, NULL::TEXT, tie_result, new_id;
     END;
     $$`;
