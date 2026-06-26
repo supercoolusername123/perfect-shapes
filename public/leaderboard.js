@@ -70,8 +70,8 @@
       if (!data.qualifies) return;
       pending = { score, shape, tie: data.tie };
       nameMessage.textContent = data.tie
-        ? `You tied 20th place with ${score}%. Enter your name, then the server flips a coin for the spot.`
-        : `Your ${score}% ${shape} belongs in the global top 20.`;
+        ? `You tied 5th place with ${score}%. Enter your name, then the server flips a coin for the spot.`
+        : `Your ${score}% ${shape} belongs in the global top 5.`;
       nameError.textContent = "";
       playerName.value = localStorage.getItem("perfect-shapes-player-name") || "";
       nameOverlay.hidden = false;
