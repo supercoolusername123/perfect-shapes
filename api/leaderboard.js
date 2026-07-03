@@ -22,6 +22,30 @@ async function ensureDatabase(sql) {
   )`;
   await sql`CREATE INDEX IF NOT EXISTS shape_scores_rank_idx
     ON shape_scores (shape, score DESC, created_at ASC)`;
+  await sql`DELETE FROM shape_scores
+    WHERE id IN (
+      SELECT id FROM (
+        SELECT id,
+          ROW_NUMBER() OVER (
+            PARTITION BY shape, lower(player_name)
+            ORDER BY score DESC, created_at ASC
+          ) AS name_rank
+        FROM shape_scores
+      ) ranked
+      WHERE name_rank > 1
+    )`;
+  await sql`DELETE FROM shape_scores
+    WHERE id IN (
+      SELECT id FROM (
+        SELECT id,
+          ROW_NUMBER() OVER (
+            PARTITION BY shape
+            ORDER BY score DESC, created_at ASC
+          ) AS shape_rank
+        FROM shape_scores
+      ) ranked
+      WHERE shape_rank > 5
+    )`;
   await sql`CREATE OR REPLACE FUNCTION submit_shape_score(p_shape TEXT, p_name TEXT, p_score SMALLINT)
     RETURNS TABLE(entered BOOLEAN, reason TEXT, won_tie BOOLEAN, score_id BIGINT)
     LANGUAGE plpgsql AS $$
@@ -31,8 +55,21 @@ async function ensureDatabase(sql) {
       cutoff_id BIGINT;
       new_id BIGINT;
       tie_result BOOLEAN := NULL;
+      existing_best SMALLINT := NULL;
     BEGIN
       PERFORM pg_advisory_xact_lock(hashtext('perfect-shapes:' || p_shape));
+
+      SELECT MAX(score) INTO existing_best
+      FROM shape_scores
+      WHERE shape = p_shape AND lower(player_name) = lower(p_name);
+
+      IF existing_best IS NOT NULL AND p_score <= existing_best THEN
+        RETURN QUERY SELECT FALSE, 'existing-better'::TEXT, NULL::BOOLEAN, NULL::BIGINT;
+        RETURN;
+      END IF;
+
+      DELETE FROM shape_scores
+      WHERE shape = p_shape AND lower(player_name) = lower(p_name);
 
       SELECT COUNT(*) INTO score_count FROM shape_scores WHERE shape = p_shape;
 

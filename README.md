@@ -1,6 +1,6 @@
 ﻿# Perfect Shapes Global
 
-Vercel-ready Perfect Shapes with a global top-20 leaderboard for every shape.
+Vercel-ready Nail the Shape with a global top-5 leaderboard for every shape.
 
 ## One-time Vercel setup
 

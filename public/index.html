@@ -203,12 +203,57 @@
       line-height: 1.5;
     }
 
+    a {
+      color: var(--accent-dark);
+      font-weight: 850;
+    }
+
+    .site-content {
+      width: min(1040px, calc(100% - 32px));
+      margin: 0 auto 34px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .info-card {
+      border: 2px solid rgba(30, 27, 24, 0.18);
+      border-radius: 12px;
+      background: rgba(255, 250, 241, 0.72);
+      padding: clamp(18px, 3vw, 28px);
+      line-height: 1.65;
+    }
+
+    .info-card h2,
+    .info-card h3 {
+      margin: 0 0 10px;
+      line-height: 1.1;
+    }
+
+    .info-card p {
+      margin: 0 0 12px;
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
     footer {
-      display: flex;
-      justify-content: center;
-      padding: 0 20px 22px;
+      display: grid;
+      justify-items: center;
+      gap: 8px;
+      padding: 20px;
       color: rgba(30, 27, 24, 0.55);
       font-size: 14px;
+      text-align: center;
+    }
+
+    footer nav {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px 16px;
     }
 
     @media (max-width: 860px) {
@@ -245,6 +290,10 @@
 
       .status {
         min-height: 64px;
+      }
+
+      .content-grid {
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -287,7 +336,39 @@
       </aside>
     </section>
 
-    <footer>Personal bests save on this device. Global rankings update live.</footer>
+    <section class="site-content" aria-label="About Nail the Shape">
+      <article class="info-card">
+        <h2>What is Nail the Shape?</h2>
+        <p>Nail the Shape is a quick drawing game about accuracy, rhythm, and tiny mistakes. Pick a circle, square, triangle, diamond, or hexagon, then draw the outline in one smooth motion around the center guide. The game scores how closely your path matches the target shape, whether you complete the outline, and how cleanly you finish the stroke.</p>
+        <p>It is intentionally simple: one canvas, five shapes, and a score that makes you want to try one more time. Personal bests save on your device, while the global leaderboard shows the top scores submitted by players for each shape.</p>
+      </article>
+
+      <div class="content-grid">
+        <article class="info-card">
+          <h3>How scoring works</h3>
+          <p>Your score compares your drawing to the invisible target outline. The scorer looks at shape accuracy, coverage around the center, closure between your start and end points, smoothness, and whether you looped too far around the shape.</p>
+        </article>
+        <article class="info-card">
+          <h3>Tips for better scores</h3>
+          <p>Start near the outline, keep your motion steady, and try not to pause. For polygons, aim for clear sides without overcorrecting every corner. For circles, a calm full loop usually beats a slow shaky one.</p>
+        </article>
+        <article class="info-card">
+          <h3>Leaderboard rules</h3>
+          <p>Each shape has its own global top five. A player name can appear once per shape; if you submit a better score with the same name, your older score is replaced. Exact ties for the final spot are settled by a coin flip.</p>
+        </article>
+      </div>
+    </section>
+
+    <footer>
+      <div>© 2026 Nail the Shape. Personal bests save on this device. Global rankings update live.</div>
+      <nav aria-label="Site links">
+        <a href="/about.html">About</a>
+        <a href="/how-to-play.html">How to Play</a>
+        <a href="/privacy.html">Privacy Policy</a>
+        <a href="/terms.html">Terms</a>
+        <a href="/contact.html">Contact</a>
+      </nav>
+    </footer>
   </main>
 
   <script>

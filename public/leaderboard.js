@@ -126,7 +126,7 @@
       render(data.leaders || []);
       message.textContent = data.entered
         ? (data.wonTie ? `Heads! You won the tie and landed at #${data.rank}.` : `You are #${data.rank} in the world for ${submitted.shape}.`)
-        : (data.reason === "coin-flip" ? "Tails this time. Your score was worthy; the coin was ruthless." : "The cutoff moved while you entered your name.");
+        : (data.reason === "coin-flip" ? "Tails this time. Your score was worthy; the coin was ruthless." : data.reason === "existing-better" ? "You already have an equal or better score for this shape." : "The cutoff moved while you entered your name.");
       boardButtons.forEach(button => button.classList.toggle("active", button.dataset.boardShape === submitted.shape));
       closeButton.focus();
     } catch (error) {
