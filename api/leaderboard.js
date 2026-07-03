@@ -143,6 +143,20 @@ export default async function handler(req, res) {
     if (!SHAPES.has(shape) || !Number.isInteger(score) || score < 0 || score > 100) {
       return send(res, 400, { error: "Invalid score." });
     }
+    const name = cleanName(req.body?.name);
+    if (action === "qualify" && name) {
+      const existing = (await sql`SELECT MAX(score) AS score
+        FROM shape_scores
+        WHERE shape = ${shape} AND lower(player_name) = lower(${name})`)[0];
+      const existingScore = existing?.score === null || existing?.score === undefined ? null : Number(existing.score);
+      if (existingScore !== null && score <= existingScore) {
+        return send(res, 200, {
+          qualifies: false,
+          reason: "existing-better",
+          existingScore
+        });
+      }
+    }
     const current = await leaders(sql, shape);
     const cutoff = current.length < 5 ? null : current[4].score;
     const qualifies = current.length < 5 || score >= cutoff;
@@ -150,7 +164,6 @@ export default async function handler(req, res) {
       return send(res, 200, { qualifies, tie: qualifies && cutoff !== null && score === cutoff, cutoff });
     }
     if (action !== "submit") return send(res, 400, { error: "Unknown action." });
-    const name = cleanName(req.body?.name);
     if (!name) return send(res, 400, { error: "Please enter a name." });
     const result = (await sql`SELECT * FROM submit_shape_score(
       ${shape}, ${name}, ${score}::SMALLINT

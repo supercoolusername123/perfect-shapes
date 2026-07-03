@@ -66,14 +66,19 @@
 
   async function check(score, shape) {
     try {
-      const data = await api({ action: "qualify", score, shape });
+      const savedName = localStorage.getItem("perfect-shapes-player-name") || "";
+      const data = await api({ action: "qualify", score, shape, name: savedName });
+      if (data.reason === "existing-better") {
+        statusText.textContent = `Your saved leaderboard score for ${shape} is already ${data.existingScore}%. Beat it to submit again.`;
+        return;
+      }
       if (!data.qualifies) return;
       pending = { score, shape, tie: data.tie };
       nameMessage.textContent = data.tie
         ? `You tied 5th place with ${score}%. Enter your name, then the server flips a coin for the spot.`
         : `Your ${score}% ${shape} belongs in the global top 5.`;
       nameError.textContent = "";
-      playerName.value = localStorage.getItem("perfect-shapes-player-name") || "";
+      playerName.value = savedName;
       nameOverlay.hidden = false;
       setTimeout(() => playerName.focus(), 0);
     } catch {
